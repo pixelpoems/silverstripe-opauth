@@ -1,5 +1,7 @@
 **This module depends on Opauth which is no longer maintained - we don't recommend continuing to use this module as we aren't actively developing it any longer.**
 
+**This Fork updates the orignally repository from [BetterBrief/silverstripe-opauth](https://github.com/BetterBrief/silverstripe-opauth). This repository is WIP working on an update to use the module within a Silverstripe 4.x project.**
+
 # SilverStripe Opauth Module
 
 [![Build Status](https://secure.travis-ci.org/BetterBrief/silverstripe-opauth.png?branch=master)](http://travis-ci.org/BetterBrief/silverstripe-opauth)
@@ -10,7 +12,8 @@
 Uses the [Opauth library](http://opauth.org) for easy drop-in strategies for social login. See their [documentation](https://github.com/opauth/opauth/wiki/)
 
 ## Current Status
-1.1 - stable. No known major issues. Report issues using the [bug tracker](https://github.com/BetterBrief/silverstripe-opauth/issues).
+1.1 - stable. No known major issues. Report issues using the [bug tracker](https://github.com/BetterBrief/silverstripe-opauth/issues).\
+4.x - WIP.
 
 ## How does it work?
 The module provides an additional login form which the developer has control over, that allows users to instantly sign in to your website with an identity provided by any Oauth provider. The providers are each handled by using an `OpauthStrategy`, many of which are freely available. There are strategies for Facebook, Twitter, Google, and many more.
@@ -23,7 +26,7 @@ Other than that, the user flow is quite simple. Provided all required data is th
 
 ## Requirements
 
- * SilverStripe 3.1 (maybe 3.0, but untested so far)
+ * SilverStripe 4.x (currently testing with 4.12)
  * At least one Opauth strategy
  * Preferably, allow_url_fopen enabled in php.ini. We've written a custom cURL workaround that works with Twitter, Google and Facebook strategies, but it's proprietary.
  * For extended cURL support we rely on an Opauth fork
@@ -61,11 +64,11 @@ You can put these settings in your `_config.yml` file. Additionally, as your str
 ###### `_config.yml` example:
 ```yml
 ---
-Name: silverstripe-opauth
-After: 'framework/*','cms/*'
+Name: opauth-config
+After: silverstripe-opauth
 ---
 # see the Opauth docs for the config settings - https://github.com/opauth/opauth/wiki/Opauth-configuration#configuration-array
-OpauthAuthenticator:
+Silverstripe\Opauth\Services\OpauthAuthenticator:
   opauth_settings:
     #Register your strategies here
     #Including any extra config
@@ -85,7 +88,7 @@ OpauthAuthenticator:
     security_timeout: '2 minutes'
     callback_transport: 'session'
 #Configuration for the Identity-Member mapping
-OpauthIdentity:
+Silverstripe\Opauth\Models\OpauthIdentity:
   member_mapper:
     Facebook:
       FirstName: 'info.first_name'
@@ -103,7 +106,9 @@ OpauthIdentity:
       Locale: ['OpauthResponseHelper', 'get_google_locale']
 ```
 
+
 ##### `_config.php` example:
+[NOT TESTET WITHIN THIS FORK: Perhaps it is needed to update the given classes with namespace class strings]
 ```php
 //Register and configure strategies
 Config::inst()->update('OpauthAuthenticator', 'opauth_settings', array(
@@ -156,3 +161,25 @@ If you find a bug or have a Really Good Idea™, please [raise an issue](https:/
 
 ## Attribution
  * Opauth available under MIT licence by U-Zyn Chua (http://uzyn.com) Copyright © 2012-2013
+
+
+## Add custom strategy to your project
+Have a look into: [Facbook Strategy](https://github.com/opauth/facebook/blob/master/FacebookStrategy.php).
+
+You can set a `strategy_dir` variable like this:
+```yml
+Silverstripe\Opauth\Services\OpauthAuthenticator:
+  opauth_settings:
+    strategy_dir: '/app/src/Opauth/Strategy/'
+    Strategy:
+        CustomStrategy:
+            id: 'xxxx'
+            secret: 'xxxx'
+```
+
+And add your custom strategy within the specified strategy directory. Currently its only working without a specified namespace in the strategy class - **WIP**.
+
+## Work in Process
+- Test 4.x and Update Unit Tests
+- Test OpauthIdentity + Configuration
+- Check Namespace within custom Strategies
