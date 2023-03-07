@@ -1,18 +1,27 @@
 ---
 Name: silverstripe-opauth
-After: 'framework/*','cms/*'
+#After:
+#  - 'framework/*'
+#  - 'cms/*'
 ---
 # YAML configuration for SilverStripe
 # See http://doc.silverstripe.org/framework/en/topics/configuration
 # Caution: Indentation through two spaces, not tabs
-OpauthAuthenticator:
+
+SilverStripe\Core\Injector\Injector:
+  SilverStripe\Security\Security:
+    properties:
+      Authenticators:
+        opauthauthenticator: Silverstripe\Opauth\Services\OpauthAuthenticator
+
+Silverstripe\Opauth\Services\OpauthAuthenticator:
   opauth_settings:
     security_iteration: 500
     security_timeout: '2 minutes'
     callback_transport: 'session'
-Member:
+SilverStripe\Security\Member:
   extensions:
-    - OpauthMemberExtension
-MemberLoginForm:
+    - Silverstripe\Opauth\Extensions\OpauthMemberExtension
+SilverStripe\Security\MemberAuthenticator\MemberLoginForm:
   extensions:
-    - OpauthMemberLoginFormExtension
+    - Silverstripe\Opauth\Extensions\OpauthMemberLoginFormExtension

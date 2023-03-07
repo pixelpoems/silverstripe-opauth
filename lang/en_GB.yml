@@ -1,12 +1,12 @@
 en_GB:
-  OpauthAuthenticator:
+  Silverstripe\Opauth\Services\OpauthAuthenticator:
     TITLE: 'Social Login'
-  OpauthLoginForm:
+  Silverstripe\Opauth\Forms\OpauthLoginForm:
     OAUTHFAILURE: 'There was a problem getting a response from {provider}.'
-  OpauthRegisterForm:
+  Silverstripe\Opauth\Forms\OpauthRegisterForm:
     ERROREMAILTAKEN: 'It looks like this email has already been used'
-  OpauthController:
+    COMPLETE: 'Complete'
+  Silverstripe\Opauth\Controllers\OpauthController:
     TITLE: 'Social login'
     PROFILECOMPLETIONTITLE: 'Complete your profile to register'
-  OpauthRegisterForm:
-    COMPLETE: 'Complete'
+

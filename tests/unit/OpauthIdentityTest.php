@@ -1,4 +1,7 @@
 <?php
+
+use Silverstripe\Opauth\Models\OpauthIdentity;
+
 class OpauthIdentityTest extends SapphireTest {
 
 	protected $usesDatabase = true;
@@ -38,8 +41,8 @@ class OpauthIdentityTest extends SapphireTest {
 		));
 		$identity->findOrCreateMember(array('linkOnMatch' => true));
 		$this->assertEquals(
-			$member->ID, 
-			$identity->MemberID, 
+			$member->ID,
+			$identity->MemberID,
 			'Links if requested and email matches'
 		);
 
@@ -75,8 +78,8 @@ class OpauthIdentityTest extends SapphireTest {
 		));
 		$member = $identity->findOrCreateMember(array('overwriteExistingFields' => false));
 		$this->assertEquals(
-			'Existing', 
-			$member->FirstName, 
+			'Existing',
+			$member->FirstName,
 			'Does not overwrite unless requested'
 		);
 
@@ -95,13 +98,13 @@ class OpauthIdentityTest extends SapphireTest {
 			'FirstName'
 		)));
 		$this->assertEquals(
-			'New', 
-			$member->FirstName, 
+			'New',
+			$member->FirstName,
 			'Overwrites existing fields if requested'
 		);
 		$this->assertEquals(
-			'Existing', 
-			$member->Surname, 
+			'Existing',
+			$member->Surname,
 			'Does not overwrite fields if not present in whitelist'
 		);
 	}

@@ -1,4 +1,19 @@
 <?php
+namespace Silverstripe\Opauth\Forms;
+
+use InvalidArgumentException;
+use LogicException;
+use OpauthStrategy;
+use SilverStripe\Control\Controller;
+use SilverStripe\Control\HTTPRequest;
+use SilverStripe\Control\HTTPResponse;
+use SilverStripe\Control\Session;
+use SilverStripe\Forms\FieldList;
+use SilverStripe\Forms\FormAction;
+use SilverStripe\Forms\HiddenField;
+use Silverstripe\Opauth\Controllers\OpauthController;
+use Silverstripe\Opauth\Services\OpauthAuthenticator;
+use SilverStripe\Security\LoginForm;
 
 /**
  * OpauthLoginForm
@@ -11,22 +26,13 @@
  */
 class OpauthLoginForm extends LoginForm {
 
-	private
-		/*
-		 * @var boolean
-		 */
-		$_strategiesDefined = false;
+	private bool $_strategiesDefined = false;
 
-	protected
-		/**
-		 * @var array config
-		 */
-		$authenticator_class = 'OpauthAuthenticator';
+	protected $authenticator_class = 'OpauthAuthenticator';
 
-	private static
-		$allowed_actions = array(
+	private static array $allowed_actions = [
 			'httpSubmission',
-		);
+    ];
 
 	public function __construct($controller, $name) {
 		parent::__construct($controller, $name, $this->getFields(), $this->getActions());
@@ -70,7 +76,8 @@ class OpauthLoginForm extends LoginForm {
 	 * Very important for multi authenticator form setups.
 	 * @return FieldList
 	 */
-	protected function getFields() {
+	protected function getFields(): FieldList
+    {
 		return new FieldList(
 			new HiddenField('AuthenticationMethod', null, $this->authenticator_class)
 		);
@@ -80,7 +87,8 @@ class OpauthLoginForm extends LoginForm {
 	 * Provide an action button to be clicked per strategy
 	 * @return FieldList
 	 */
-	protected function getActions() {
+	protected function getActions(): FieldList
+    {
 		$actions = new FieldList();
 		foreach($this->getStrategies() as $strategyClass) {
 			$strategyMethod = 'handleStrategy' . $strategyClass;
@@ -94,20 +102,21 @@ class OpauthLoginForm extends LoginForm {
 	/**
 	 * @return array All enabled strategies from config
 	 */
-	public function getStrategies() {
+	public function getStrategies(): array
+    {
 		return OpauthAuthenticator::get_enabled_strategies();
 	}
 
 	/**
 	 * Global endpoint for handleStrategy - all strategy actions point here.
-	 * @throws LogicException This should not be directly called.
-	 * @throws InvalidArgumentException The strategy must be valid and existent
 	 * @param string $funcName The bound function name from addWrapperMethod
 	 * @param array $data Standard data param as part of form submission
 	 * @param OpauthLoginForm $form
-	 * @param SS_HTTPRequest $request
-	 * @return ViewableData
-	 */
+	 * @param HTTPRequest $request
+	 * @return HTTPResponse
+	 * @throws InvalidArgumentException The strategy must be valid and existent
+	 * @throws LogicException This should not be directly called.
+     */
 	public function handleStrategy($funcName, $data, $form, $request) {
 		if(func_num_args() < 4) {
 			throw new LogicException('Must be called with a strategy handler');
@@ -132,8 +141,18 @@ class OpauthLoginForm extends LoginForm {
 	 * The authenticator name, used in templates
 	 * @return string
 	 */
-	public function getAuthenticatorName() {
+	public function getAuthenticatorName(): string
+    {
 		return OpauthAuthenticator::get_name();
 	}
 
+    protected function getFormFields()
+    {
+        // TODO: Implement getFormFields() method.
+    }
+
+    protected function getFormActions()
+    {
+        // TODO: Implement getFormActions() method.
+    }
 }

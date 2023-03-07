@@ -1,4 +1,7 @@
 <?php
+
+use Silverstripe\Opauth\Models\OpauthIdentity;
+
 class OpauthMemberExtensionTest extends SapphireTest {
 
 	protected $usesDatabase = true;
@@ -13,9 +16,9 @@ class OpauthMemberExtensionTest extends SapphireTest {
 		$identity = new OpauthIdentity();
 		$identity->write();
 		$member->OpauthIdentities()->add($identity);
-		
+
 		$member->delete();
-		
+
 		$this->assertEquals(0, $member->OpauthIdentities()->Count());
 	}
 

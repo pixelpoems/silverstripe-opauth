@@ -1,4 +1,8 @@
 <?php
+
+use Silverstripe\Opauth\Extensions\OpauthMemberLoginFormExtension;
+use Silverstripe\Opauth\Models\OpauthIdentity;
+
 class OpauthMemberLoginFormExtensionTest extends SapphireTest {
 
 	public function testForgotPasswordVeto() {
@@ -31,10 +35,10 @@ class OpauthMemberLoginFormExtensionTest extends SapphireTest {
 
 		$this->assertNull($ext->forgotPassword($memberWithoutPassword));
 		$this->assertNull(Session::get("FormInfo.Form_Form.formError.message"));
-		
+
 		$this->assertNull($ext->forgotPassword($memberWithPassword));
 		$this->assertNull(Session::get("FormInfo.Form_Form.formError.message"));
-		
+
 		$this->assertFalse($ext->forgotPassword($memberWithIdentity));
 		$this->assertContains('Google', Session::get("FormInfo.Form_Form.formError.message"));
 	}
