@@ -1,7 +1,7 @@
 {
 	"name": "betterbrief/silverstripe-opauth",
-	"type": "silverstripe-module",
-	"description": "SilverStripe 3.1 OpAuth module. See: http://opauth.org/",
+    "type": "silverstripe-vendormodule",
+	"description": "SilverStripe 4.x OpAuth module. See: http://opauth.org/ SilverStripe 4x Update by a pixelpoems fork",
 	"keywords": ["silverstripe", "social", "opauth", "oauth", "login"],
 	"homepage": "https://github.com/BetterBrief/silverstripe-opauth",
 	"license": "BSD",
@@ -18,7 +18,7 @@
 		}
 	],
 	"require": {
-		"silverstripe/framework": "~3.1",
+		"silverstripe/framework": "~4.12",
 		"opauth/opauth": "~0.4.5"
 	},
 	"require-dev": {
