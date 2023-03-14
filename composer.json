@@ -1,5 +1,5 @@
 {
-	"name": "pixelpoems/silverstripe-opauth",
+	"name": "betterbrief/silverstripe-opauth",
     "type": "silverstripe-vendormodule",
 	"description": "SilverStripe 4.x OpAuth module. See: http://opauth.org/ SilverStripe 4x Update by a pixelpoems fork",
 	"keywords": ["silverstripe", "social", "opauth", "oauth", "login"],
@@ -36,5 +36,7 @@
 			"composer/installers": true,
 			"silverstripe/vendor-plugin": true
 		}
-	}
+	},
+    "prefer-stable": true,
+    "minimum-stability": "dev"
 }
