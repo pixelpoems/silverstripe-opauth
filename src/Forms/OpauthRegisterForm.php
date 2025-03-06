@@ -1,7 +1,6 @@
 <?php
 namespace Silverstripe\Opauth\Forms;
 
-use Controller;
 use InvalidArgumentException;
 use SilverStripe\Control\HTTPRequest;
 use SilverStripe\Control\Session;
@@ -10,7 +9,9 @@ use SilverStripe\Forms\FieldList;
 use SilverStripe\Forms\Form;
 use SilverStripe\Forms\FormAction;
 use SilverStripe\Forms\RequiredFields;
+use Silverstripe\Opauth\Validators\OpauthValidator;
 use SilverStripe\Security\Member;
+use SilverStripe\Control\Controller;
 
 /**
  * OpauthRegisterForm
@@ -82,7 +83,7 @@ class OpauthRegisterForm extends Form
             }
             return $fields;
         }
-        return new FieldList(singleton('Member')->getCMSFields()->dataFields());
+        return new FieldList(singleton(Member::class)->getCMSFields()->dataFields());
     }
 
     /**
@@ -119,7 +120,7 @@ class OpauthRegisterForm extends Form
      */
     public function getValidator(): RequiredFields
     {
-        return Injector::inst()->create('OpauthValidator', $this->requiredFields);
+        return Injector::inst()->create(OpauthValidator::class, $this->requiredFields);
     }
 
     /**
@@ -137,8 +138,8 @@ class OpauthRegisterForm extends Form
         } else if (isset($request)) {
             $this->loadDataFrom($request->postVars());
         } // Hacky again :(
-        else if (Session::get($dataPath)) {
-            $this->loadDataFrom(Session::get($dataPath));
+        else if (Controller::curr()->getRequest()->getSession()->get($dataPath)) {
+            $this->loadDataFrom(Controller::curr()->getRequest()->getSession()->get($dataPath));
         } else if ($failover = $this->getSessionData()) {
             $this->loadDataFrom($failover);
         }
@@ -154,18 +155,18 @@ class OpauthRegisterForm extends Form
      */
     public function setSessionData($data): OpauthRegisterForm|static
     {
-        Session::set($this->class . '.data', $data);
+        Controller::curr()->getRequest()->getSession()->set($this->class . '.data', $data);
         return $this;
     }
 
     public function getSessionData()
     {
-        return Session::get($this->class . '.data');
+        return Controller::curr()->getRequest()->getSession()->get($this->class . '.data');
     }
 
     public function clearSessionData(): static
     {
-        Session::clear($this->class . '.data');
+        Controller::curr()->getRequest()->getSession()->clear($this->class . '.data');
         return $this;
     }
 

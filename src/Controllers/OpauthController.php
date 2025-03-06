@@ -3,18 +3,20 @@
 namespace Silverstripe\Opauth\Controllers;
 
 use InvalidArgumentException;
+use PageController;
 use SilverStripe\CMS\Controllers\ContentController;
-use \PageController;
 use SilverStripe\Control\Controller;
 use SilverStripe\Control\HTTPRequest;
 use SilverStripe\Control\HTTPResponse_Exception;
 use SilverStripe\Control\Session;
 use SilverStripe\Core\Injector\Injector;
 use SilverStripe\Forms\Form;
+use Silverstripe\Opauth\Forms\OpauthRegisterForm;
 use Silverstripe\Opauth\Models\OpauthIdentity;
 use Silverstripe\Opauth\Services\OpauthAuthenticator;
 use Silverstripe\Opauth\Validators\OpauthValidationException;
 use SilverStripe\ORM\DataObject;
+use SilverStripe\Security\IdentityStore;
 use SilverStripe\Security\Member;
 use SilverStripe\Security\Security;
 
@@ -127,7 +129,7 @@ class OpauthController extends ContentController
             $response = array();
         }
         // Clear the response as it is only to be read once (if Session)
-        Session::clear('opauth');
+        $this->getRequest()->getSession()->clear('opauth');
 
         // Handle all Opauth validation in this handy function
         try {
@@ -149,7 +151,7 @@ class OpauthController extends ContentController
                 $flag = self::AUTH_FLAG_LOGIN;
             }
 
-            Session::set('OpauthIdentityID', $identity->ID);
+            $this->getRequest()->getSession()->set('OpauthIdentityID', $identity->ID);
         } else {
 
             $flag = self::AUTH_FLAG_REGISTER;
@@ -158,7 +160,7 @@ class OpauthController extends ContentController
             $identity->write();
 
             // Keep a note of the identity ID
-            Session::set('OpauthIdentityID', $identity->ID);
+            $this->getRequest()->getSession()->set('OpauthIdentityID', $identity->ID);
 
             // Even if written, check validation - we might not have full fields
             $validationResult = $member->validate();
@@ -187,7 +189,7 @@ class OpauthController extends ContentController
     protected function loginAndRedirect(Member $member, OpauthIdentity $identity, $mode)
     {
         // Back up the BackURL as Member::logIn regenerates the session
-        $backURL = Session::get('BackURL');
+        $backURL = $this->getRequest()->getSession()->get('BackURL');
 
         // Check if we can log in:
         $canLogIn = $member->canLogIn();
@@ -219,17 +221,17 @@ class OpauthController extends ContentController
         $member->logIn();
 
         // Clear any identity ID
-        Session::clear('OpauthIdentityID');
+        $this->getRequest()->getSession()->clear('OpauthIdentityID');
 
         // Clear the BackURL
-        Session::clear('BackURL');
+        $this->getRequest()->getSession()->clear('BackURL');
 
         return $this->redirect($redirectURL);
     }
 
     public function profilecompletion(HTTPRequest $request = null)
     {
-        if (!Session::get('OpauthIdentityID')) {
+        if (!$this->getRequest()->getSession()->get('OpauthIdentityID')) {
             Security::permissionFailure($this);
         }
         // Redirect to complete register step by adding in extra info
@@ -244,7 +246,7 @@ class OpauthController extends ContentController
     public function RegisterForm(HTTPRequest $request = null, Member $member = null, $result = null)
     {
         if (!isset($this->registerForm)) {
-            $form = Injector::inst()->create('OpauthRegisterForm', $this, 'RegisterForm', $result);
+            $form = Injector::inst()->create(OpauthRegisterForm::class, $this, 'RegisterForm', $result);
             $form->populateFromSources($request, $member, $result);
             // Set manually the form action due to how routing works
             $form->setFormAction(Controller::join_links(
@@ -262,7 +264,7 @@ class OpauthController extends ContentController
     {
         $member = new Member();
         $form->saveInto($member);
-        $identityID = Session::get('OpauthIdentityID');
+        $identityID = $this->getRequest()->getSession()->get('OpauthIdentityID');
         $identity = DataObject::get_by_id('OpauthIdentity', $identityID);
         $validationResult = $member->validate();
         $existing = Member::get()->filter('Email', $member->Email)->first();
@@ -365,7 +367,7 @@ class OpauthController extends ContentController
      */
     protected function getResponseFromSession(): array
     {
-        return Session::get('opauth');
+        return $this->getRequest()->getSession()->get('opauth');
     }
 
     /**
@@ -398,7 +400,7 @@ class OpauthController extends ContentController
                 break;
         }
         // Set form message, redirect to login with permission failure
-        Form::messageForForm($loginFormName, $message, 'bad');
+        Form::singleton()->setMessage($message, 'bad');
         // always redirect to login
         Security::permissionFailure($this, $message);
     }

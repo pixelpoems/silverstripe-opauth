@@ -3,6 +3,7 @@
 use Silverstripe\Opauth\Extensions\OpauthMemberLoginFormExtension;
 use Silverstripe\Opauth\Models\OpauthIdentity;
 
+// Not Testet with cms 5 update
 class OpauthMemberLoginFormExtensionTest extends SapphireTest {
 
 	public function testForgotPasswordVeto() {

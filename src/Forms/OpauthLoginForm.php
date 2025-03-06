@@ -45,7 +45,7 @@ class OpauthLoginForm extends LoginForm {
 	 */
 	public function configureBackURL() {
 		if($backURL = $this->controller->request->requestVar('BackURL')) {
-			Session::set('BackURL', $backURL);
+            Controller::curr()->getRequest()->getSession()->set('BackURL', $backURL);
 		}
 	}
 
