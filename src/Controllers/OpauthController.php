@@ -1,22 +1,23 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Silverstripe\Opauth\Controllers;
 
+use SilverStripe\Control\HTTPResponse;
+use SilverStripe\ORM\FieldType\DBHTMLText;
 use InvalidArgumentException;
 use PageController;
 use SilverStripe\CMS\Controllers\ContentController;
 use SilverStripe\Control\Controller;
 use SilverStripe\Control\HTTPRequest;
 use SilverStripe\Control\HTTPResponse_Exception;
-use SilverStripe\Control\Session;
 use SilverStripe\Core\Injector\Injector;
 use SilverStripe\Forms\Form;
 use Silverstripe\Opauth\Forms\OpauthRegisterForm;
 use Silverstripe\Opauth\Models\OpauthIdentity;
 use Silverstripe\Opauth\Services\OpauthAuthenticator;
 use Silverstripe\Opauth\Validators\OpauthValidationException;
-use SilverStripe\ORM\DataObject;
-use SilverStripe\Security\IdentityStore;
 use SilverStripe\Security\Member;
 use SilverStripe\Security\Security;
 
@@ -48,11 +49,19 @@ class OpauthController extends ContentController
         /**
          * LOGIN = already a user with an OAuth ID
          */
-        AUTH_FLAG_LOGIN = 2,
+        AUTH_FLAG_LOGIN = 2;
+    /**
+     * Bitwise indicators to extensions what sort of action is happening
+     */
+    const
         /**
          * LINK = already a user, linking a new OAuth ID
          */
-        AUTH_FLAG_LINK = 4,
+        AUTH_FLAG_LINK = 4;
+    /**
+     * Bitwise indicators to extensions what sort of action is happening
+     */
+    const
         /**
          * REGISTER = new user, linking OAuth ID
          */
@@ -66,8 +75,9 @@ class OpauthController extends ContentController
     public function __construct($dataRecord = null)
     {
         if (class_exists(PageController::class)) {
-            $dataRecord = new PageController($dataRecord);
+            $dataRecord = PageController::create($dataRecord);
         }
+
         parent::__construct($dataRecord);
     }
 
@@ -128,14 +138,15 @@ class OpauthController extends ContentController
         if (!$response) {
             $response = array();
         }
+
         // Clear the response as it is only to be read once (if Session)
         $this->getRequest()->getSession()->clear('opauth');
 
         // Handle all Opauth validation in this handy function
         try {
             $this->validateOpauthResponse($opauth, $response);
-        } catch (OpauthValidationException $e) {
-            return $this->handleOpauthException($e);
+        } catch (OpauthValidationException $opauthValidationException) {
+            return $this->handleOpauthException($opauthValidationException);
         }
 
         $identity = OpauthIdentity::factory($response);
@@ -171,13 +182,13 @@ class OpauthController extends ContentController
                 $regForm->setSessionData($member);
                 $regForm->validate();
                 return $this->redirect($this->Link('profilecompletion'));
-            } else {
-                $member->extend('onBeforeOpauthRegister');
-                $member->write();
-                $identity->MemberID = $member->ID;
-                $identity->write();
             }
+            $member->extend('onBeforeOpauthRegister');
+            $member->write();
+            $identity->MemberID = $member->ID;
+            $identity->write();
         }
+
         return $this->loginAndRedirect($member, $identity, $flag);
     }
 
@@ -186,7 +197,7 @@ class OpauthController extends ContentController
      * @param OpauthIdentity
      * @param int $mode One or more AUTH_FLAGs.
      */
-    protected function loginAndRedirect(Member $member, OpauthIdentity $identity, $mode)
+    protected function loginAndRedirect(Member $member, OpauthIdentity $identity, $mode): ?HTTPResponse
     {
         // Back up the BackURL as Member::logIn regenerates the session
         $backURL = $this->getRequest()->getSession()->get('BackURL');
@@ -199,18 +210,15 @@ class OpauthController extends ContentController
             if (count($extendedURLs)) {
                 $redirectURL = array_pop($extendedURLs);
                 $this->redirect($redirectURL, 302);
-                return;
+                return null;
             }
+
             Security::permissionFailure($this, $canLogIn->message());
-            return;
+            return null;
         }
 
         // Decide where to go afterwards...
-        if (!empty($backURL)) {
-            $redirectURL = $backURL;
-        } else {
-            $redirectURL = Security::config()->default_login_dest;
-        }
+        $redirectURL = empty($backURL) ? Security::config()->default_login_dest : $backURL;
 
         $extendedURLs = $this->extend('getSuccessBackURL', $member, $identity, $redirectURL, $mode);
 
@@ -229,11 +237,12 @@ class OpauthController extends ContentController
         return $this->redirect($redirectURL);
     }
 
-    public function profilecompletion(HTTPRequest $request = null)
+    public function profilecompletion(HTTPRequest $request = null): DBHTMLText
     {
         if (!$this->getRequest()->getSession()->get('OpauthIdentityID')) {
             Security::permissionFailure($this);
         }
+
         // Redirect to complete register step by adding in extra info
         return $this->renderWith(array(
                 'OpauthController_profilecompletion',
@@ -257,17 +266,18 @@ class OpauthController extends ContentController
         } else {
             $this->registerForm->populateFromSources($request, $member, $result);
         }
+
         return $this->registerForm;
     }
 
     public function doCompleteRegister($data, $form, $request)
     {
-        $member = new Member();
+        $member = Member::create();
         $form->saveInto($member);
         $identityID = $this->getRequest()->getSession()->get('OpauthIdentityID');
-        $identity = DataObject::get_by_id('OpauthIdentity', $identityID);
+        $identity = \OpauthIdentity::get()->byID($identityID);
         $validationResult = $member->validate();
-        $existing = Member::get()->filter('Email', $member->Email)->first();
+        $existing = Member::get()->filter(['Email' => $member->Email])->first();
         $emailCollision = $existing && $existing->exists();
         // If not valid then we have to manually transpose errors to the form
         if (!$validationResult->valid() || $emailCollision) {
@@ -280,15 +290,15 @@ class OpauthController extends ContentController
                     'It looks like this email has already been used'
                 ), 'required');
             }
+
             return $this->redirect('profilecompletion');
-        } // If valid then write and redirect
-        else {
-            $member->extend('onBeforeOpauthRegister');
-            $member->write();
-            $identity->MemberID = $member->ID;
-            $identity->write();
-            return $this->loginAndRedirect($member, $identity, self::AUTH_FLAG_REGISTER);
         }
+        $member->extend('onBeforeOpauthRegister');
+        $member->write();
+
+        $identity->MemberID = $member->ID;
+        $identity->write();
+        return $this->loginAndRedirect($member, $identity, self::AUTH_FLAG_REGISTER);
     }
 
     /**
@@ -296,7 +306,7 @@ class OpauthController extends ContentController
      * @return array The response
      * @throws InvalidArugmentException
      */
-    protected function getOpauthResponse()
+    protected function getOpauthResponse(): array
     {
         $config = OpauthAuthenticator::get_opauth_config();
         $transportMethod = $config['callback_transport'];
@@ -316,7 +326,7 @@ class OpauthController extends ContentController
      * @throws InvalidArgumentException
      * @throws OpauthValidationException
      */
-    protected function validateOpauthResponse($opauth, $response)
+    protected function validateOpauthResponse($opauth, array $response)
     {
         if (!empty($response['error'])) {
             throw new OpauthValidationException('Oauth provider error', 1, $response['error']);
@@ -353,7 +363,7 @@ class OpauthController extends ContentController
      * Shorthand for quickly finding missing components and complaining about it
      * @throws InvalidArgumentException|OpauthValidationException
      */
-    protected function requireResponseComponents(array $components, $response)
+    protected function requireResponseComponents(array $components, array $response)
     {
         foreach ($components as $component) {
             if (empty($response[$component])) {
@@ -370,13 +380,9 @@ class OpauthController extends ContentController
         return $this->getRequest()->getSession()->get('opauth');
     }
 
-    /**
-     * @param OpauthValidationException $e
-     */
     protected function handleOpauthException(OpauthValidationException $e)
     {
         $data = $e->getData();
-        $loginFormName = 'OpauthLoginForm_LoginForm';
         $message = '';
         switch ($e->getCode()) {
             case 1: // provider error
@@ -399,6 +405,7 @@ class OpauthController extends ContentController
                 );
                 break;
         }
+
         // Set form message, redirect to login with permission failure
         Form::singleton()->setMessage($message, 'bad');
         // always redirect to login
@@ -409,7 +416,7 @@ class OpauthController extends ContentController
      * Looks at $method (GET, POST, PUT etc) for the response.
      * @return array Opauth response
      */
-    protected function getResponseFromRequest($method): array
+    protected function getResponseFromRequest(string $method): array
     {
         return unserialize(base64_decode($this->request->{$method . 'Var'}('opauth')));
     }
@@ -425,7 +432,6 @@ class OpauthController extends ContentController
     /**
      * 'path' param for use in Opauth's config
      * MUST have trailling slash for Opauth needs
-     * @return string
      */
     public static function get_path(): string
     {
@@ -438,7 +444,6 @@ class OpauthController extends ContentController
     /**
      * 'callback_url' param for use in Opauth's config
      * MUST have trailling slash for Opauth needs
-     * @return string
      */
     public static function get_callback_path(): string
     {
@@ -449,11 +454,12 @@ class OpauthController extends ContentController
     }
 
 ////**** Template variables ****////
-    function Title(): string
+    public function Title(): string
     {
         if ($this->action == 'profilecompletion') {
             return _t('OpauthController.PROFILECOMPLETIONTITLE', 'Complete your profile');
         }
+
         return _t('OpauthController.TITLE', 'Social Login');
     }
 
@@ -461,6 +467,7 @@ class OpauthController extends ContentController
     {
         return $this->RegisterForm();
     }
+
 ////**** END Template variables ****////
 
 }

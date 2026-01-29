@@ -10,10 +10,11 @@ class OpauthMemberExtensionTest extends SapphireTest {
 		'Member' => array('OpauthMemberExtension')
 	);
 
-	public function testDeletesOpauthIdentityOnDelete() {
+	public function testDeletesOpauthIdentityOnDelete(): void {
 		$member = new Member(array('Email' => 'test@test.com'));
 		$member->write();
-		$identity = new OpauthIdentity();
+
+		$identity = OpauthIdentity::create();
 		$identity->write();
 		$member->OpauthIdentities()->add($identity);
 

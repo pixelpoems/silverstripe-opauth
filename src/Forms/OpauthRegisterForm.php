@@ -1,14 +1,16 @@
 <?php
+
+declare(strict_types=1);
+
 namespace Silverstripe\Opauth\Forms;
 
+use SilverStripe\Forms\Validation\RequiredFieldsValidator;
 use InvalidArgumentException;
 use SilverStripe\Control\HTTPRequest;
-use SilverStripe\Control\Session;
 use SilverStripe\Core\Injector\Injector;
 use SilverStripe\Forms\FieldList;
 use SilverStripe\Forms\Form;
 use SilverStripe\Forms\FormAction;
-use SilverStripe\Forms\RequiredFields;
 use Silverstripe\Opauth\Validators\OpauthValidator;
 use SilverStripe\Security\Member;
 use SilverStripe\Control\Controller;
@@ -26,7 +28,7 @@ class OpauthRegisterForm extends Form
 
     protected $fields;
 
-    protected $requiredFields;
+    protected ?array $requiredFields;
 
     protected static $field_source;
 
@@ -35,11 +37,12 @@ class OpauthRegisterForm extends Form
      * @param string $name
      * @param array|null $requiredFields
      */
-    public function __construct($controller, $name, array $requiredFields = null)
+    public function __construct(?\SilverStripe\Control\RequestHandler $controller, $name, array $requiredFields = null)
     {
         if (isset($requiredFields)) {
             $this->requiredFields = $requiredFields;
         }
+
         parent::__construct($controller, $name, $this->getFields(), $this->getActions(), $this->getValidator());
         // Manually call extensions here as Object must first construct extensions
         $this->extend('updateFields', $this->fields);
@@ -50,7 +53,7 @@ class OpauthRegisterForm extends Form
      * setRequiredFields
      * Resets everything if the fields change
      */
-    public function setRequiredFields($fields)
+    public function setRequiredFields($fields): static
     {
         $this->requiredFields = $fields;
         $this->setValidator($this->getValidator());
@@ -61,7 +64,6 @@ class OpauthRegisterForm extends Form
      * getFields
      * Picks only the required fields from the field source
      * and then presents them in a field set.
-     * @return FieldList
      */
     public function getFields(): FieldList
     {
@@ -72,7 +74,6 @@ class OpauthRegisterForm extends Form
 
     /**
      * Uses the field_source defined, or falls back to the Member's getCMSFields
-     * @return FieldList
      */
     public function getFieldSource(): FieldList
     {
@@ -81,9 +82,11 @@ class OpauthRegisterForm extends Form
             if (!$fields instanceof FieldList) {
                 throw new InvalidArgumentException('Field source must be callable and return a FieldList');
             }
+
             return $fields;
         }
-        return new FieldList(singleton(Member::class)->getCMSFields()->dataFields());
+
+        return FieldList::create(singleton(Member::class)->getCMSFields()->dataFields());
     }
 
     /**
@@ -93,32 +96,29 @@ class OpauthRegisterForm extends Form
      *
      * Callable docs: http://php.net/manual/en/language.types.callable.php
      */
-    public static function set_field_source($sourceFn)
+    public static function set_field_source($sourceFn): void
     {
         if (!is_callable($sourceFn)) {
             throw new InvalidArgumentException('$sourceFn must be callable and return a FieldList');
         }
+
         self::$field_source = $sourceFn;
     }
 
     /**
      * Get actions
      * Points to a controller action
-     * @return FieldList
      */
     public function getActions(): FieldList
     {
-        $actions = new FieldList(array(
-            new FormAction('doCompleteRegister', _t('OpauthRegisterForm.COMPLETE', 'Complete')),
+        $actions = FieldList::create(array(
+            FormAction::create('doCompleteRegister', _t('OpauthRegisterForm.COMPLETE', 'Complete')),
         ));
         $this->extend('updateActions', $actions);
         return $actions;
     }
 
-    /**
-     * @return RequiredFields
-     */
-    public function getValidator(): RequiredFields
+    public function getValidator(): RequiredFieldsValidator
     {
         return Injector::inst()->create(OpauthValidator::class, $this->requiredFields);
     }
@@ -130,22 +130,23 @@ class OpauthRegisterForm extends Form
      * @param array|null $required Any validation messages
      * @return $this
      */
-    public function populateFromSources(HTTPRequest $request = null, Member $member = null, array $required = null)
+    public function populateFromSources(HTTPRequest $request = null, Member $member = null, array $required = null): static
     {
-        $dataPath = "FormInfo.{$this->FormName()}.data";
+        $dataPath = sprintf('FormInfo.%s.data', $this->FormName());
         if (isset($member)) {
             $this->loadDataFrom($member);
-        } else if (isset($request)) {
+        } elseif (isset($request)) {
             $this->loadDataFrom($request->postVars());
-        } // Hacky again :(
-        else if (Controller::curr()->getRequest()->getSession()->get($dataPath)) {
+        } elseif (Controller::curr()->getRequest()->getSession()->get($dataPath)) {
             $this->loadDataFrom(Controller::curr()->getRequest()->getSession()->get($dataPath));
-        } else if ($failover = $this->getSessionData()) {
+        } elseif ($failover = $this->getSessionData()) {
             $this->loadDataFrom($failover);
         }
-        if (!empty($required)) {
+
+        if ($required !== null && $required !== []) {
             $this->setRequiredFields($required);
         }
+
         return $this;
     }
 
@@ -174,7 +175,7 @@ class OpauthRegisterForm extends Form
      * mockErrors
      * Uses a very nasty trick to dynamically create some required field errors
      */
-    public function mockErrors()
+    public function mockErrors(): void
     {
         $this->validate();
     }

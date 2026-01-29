@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Silverstripe\Opauth\Services;
 
 
@@ -25,7 +27,7 @@ class OpauthAuthenticator extends MemberAuthenticator
         /**
          * @var Opauth Persistent Opauth instance.
          */
-        $opauth;
+        ?Opauth $opauth = null;
 
     /**
      * get_enabled_strategies
@@ -60,27 +62,24 @@ class OpauthAuthenticator extends MemberAuthenticator
      * @param boolean $autoRun Should Opauth auto run? Default: false
      * @return Opauth The Opauth instance. Isn't it easy to typo this as Opeth?
      */
-    public static function opauth(bool $autoRun = false, $config = array()): Opauth
+    public static function opauth(bool $autoRun = false, array $config = array()): Opauth
     {
         if (!isset(self::$opauth)) {
             self::$opauth = new Opauth(self::get_opauth_config($config), $autoRun);
         }
+
         return self::$opauth;
     }
 
     /**
      * get_strategy_segment
      * Works around Opauth's weird URL scheme - GoogleStrategy => /google/
-     * @return string
      */
     public static function get_strategy_segment($strategy): string
     {
         return preg_replace('/(strategy)$/', '', strtolower($strategy));
     }
 
-    /**
-     * @return OpauthLoginForm
-     */
     public static function get_login_form(Controller $controller): OpauthLoginForm
     {
         return Injector::inst()->create('OpauthLoginForm', $controller, 'LoginForm');

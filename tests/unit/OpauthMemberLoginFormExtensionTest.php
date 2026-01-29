@@ -6,7 +6,7 @@ use Silverstripe\Opauth\Models\OpauthIdentity;
 // Not Testet with cms 5 update
 class OpauthMemberLoginFormExtensionTest extends SapphireTest {
 
-	public function testForgotPasswordVeto() {
+	public function testForgotPasswordVeto(): void {
 		Config::inst()->update('OpauthMemberLoginFormExtension', 'allow_password_reset', false);
 
 		$memberWithoutPassword = new Member(array(
@@ -24,7 +24,8 @@ class OpauthMemberLoginFormExtensionTest extends SapphireTest {
 			'Email' => 'withidentity@test.com',
 		));
 		$memberWithIdentity->write();
-		$identity = new OpauthIdentity(array(
+
+		$identity = OpauthIdentity::create(array(
 			'MemberID' => $memberWithIdentity->ID,
 			'Provider' => 'Google'
 		));

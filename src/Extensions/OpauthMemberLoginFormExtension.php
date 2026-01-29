@@ -1,4 +1,7 @@
 <?php
+
+declare(strict_types=1);
+
 namespace Silverstripe\Opauth\Extensions;
 
 use SilverStripe\Core\Config\Config;
@@ -11,15 +14,11 @@ class OpauthMemberLoginFormExtension extends Extension
 
     /**
      * @config
-     * @var boolean
      */
     private static bool $allow_password_reset = true;
 
     /**
      * Deny password resets
-     *
-     * @param Member $member
-     * @return bool|null
      */
     public function forgotPassword(Member $member): ?bool
     {
@@ -29,17 +28,16 @@ class OpauthMemberLoginFormExtension extends Extension
 
         $identity = OpauthIdentity::get()->find('MemberID', $member->ID);
         if (!$member->Password && $identity) {
-            $this->owner->sessionMessage(
+            $this->getOwner()->sessionMessage(
                 _t(
                     'OpauthMemberLoginFormExtension.NoResetPassword',
-                    'Can\'t reset password for accounts registered through {provider}',
+                    "Can't reset password for accounts registered through {provider}",
                     array('provider' => $identity->Provider)
                 ),
                 'bad'
             );
             return false;
-        } else {
-            return null;
         }
+        return null;
     }
 }

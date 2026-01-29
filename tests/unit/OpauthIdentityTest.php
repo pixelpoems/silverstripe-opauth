@@ -6,7 +6,7 @@ class OpauthIdentityTest extends SapphireTest {
 
 	protected $usesDatabase = true;
 
-	public function setUp() {
+	public function setUp(): void {
 		parent::setUp();
 
 		Config::inst()->update('OpauthIdentity', 'member_mapper', array(
@@ -18,7 +18,7 @@ class OpauthIdentityTest extends SapphireTest {
 		));
 	}
 
-	public function testFindOrCreateMemberLinkOnMatch() {
+	public function testFindOrCreateMemberLinkOnMatch(): void {
 		$member = new Member(array('Email' => 'existing@test.com'));
 		$member->write();
 
@@ -57,7 +57,7 @@ class OpauthIdentityTest extends SapphireTest {
 		$this->assertEquals(0, $identity->MemberID, 'Does not link if requested but no member found');
 	}
 
-	public function testFindOrCreateMemberOverwriteExistingFields() {
+	public function testFindOrCreateMemberOverwriteExistingFields(): void {
 		$member = new Member(array(
 			'Email' => 'existing@test.com',
 			'FirstName' => 'Existing',

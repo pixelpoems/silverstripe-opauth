@@ -1,11 +1,13 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Silverstripe\Opauth\Models;
 
+use SilverStripe\Core\ArrayLib;
 use InvalidArgumentException;
 use SilverStripe\Core\Config\Config;
 use Silverstripe\Opauth\Services\OpauthResponseHelper;
-use SilverStripe\ORM\ArrayLib;
 use SilverStripe\ORM\DataObject;
 use SilverStripe\Security\Member;
 
@@ -19,7 +21,8 @@ use SilverStripe\Security\Member;
 class OpauthIdentity extends DataObject
 {
 
-    private static $table_name = 'OpauthIdentity';
+    private static string $table_name = 'OpauthIdentity';
+
     private static array $db = [
         'UID' => 'Varchar(255)',
         'Provider' => 'Varchar(45)',
@@ -39,7 +42,8 @@ class OpauthIdentity extends DataObject
         /**
          * @var array source from Opauth
          */
-        $authSource,
+        $authSource;
+    protected
         /**
          * @var array The parsed member record, if any
          */
@@ -49,7 +53,7 @@ class OpauthIdentity extends DataObject
         /**
          * @var boolean shim for onBeforeCreate
          */
-        $_isCreating = false;
+        bool $_isCreating = false;
 
     /**
      * factory
@@ -63,6 +67,7 @@ class OpauthIdentity extends DataObject
         if (empty($oaResponse['auth'])) {
             throw new InvalidArgumentException('The auth key is required to continue.');
         }
+
         if (empty($oaResponse['auth']['provider'])) {
             throw new InvalidArgumentException('Unable to determine provider.');
         }
@@ -77,7 +82,7 @@ class OpauthIdentity extends DataObject
         )->first();
 
         if (!$do || !$do->exists()) {
-            $do = new OpauthIdentity();
+            $do = OpauthIdentity::create();
             $do->Provider = $auth['provider'];
             $do->UID = $auth['uid'];
         }
@@ -89,13 +94,14 @@ class OpauthIdentity extends DataObject
     /**
      * Add an extension point for creation and member linking
      */
-    public function onBeforeWrite()
+    protected function onBeforeWrite()
     {
         parent::onBeforeWrite();
         if (!$this->isInDb()) {
             $this->_isCreating = true;
             $this->extend('onBeforeCreate');
         }
+
         if ($this->isChanged('MemberID')) {
             $this->extend('onMemberLinked');
         }
@@ -104,7 +110,7 @@ class OpauthIdentity extends DataObject
     /**
      * Add an extension point for afterCreate
      */
-    public function onAfterWrite()
+    protected function onAfterWrite()
     {
         parent::onAfterWrite();
         if ($this->_isCreating === true) {
@@ -118,7 +124,6 @@ class OpauthIdentity extends DataObject
      * creating a new Member object.
      * Note that this method does not write anything, merely sets everything up.
      * @param array $usrSettings A map of settings because there are so many.
-     * @return Member
      */
     public function findOrCreateMember($usrSettings = array()): Member
     {
@@ -152,12 +157,12 @@ class OpauthIdentity extends DataObject
         $record = $this->getMemberRecordFromAuth();
 
         if (empty($record['Email'])) {
-            $member = new Member();
+            $member = Member::create();
         } else {
-            $member = Member::get()->filter('Email', $record['Email'])->first();
+            $member = Member::get()->filter(['Email' => $record['Email']])->first();
 
             if (!$member) {
-                $member = new Member();
+                $member = Member::create();
             }
         }
 
@@ -177,9 +182,10 @@ class OpauthIdentity extends DataObject
             // If overwrite is true, take everything (subtract Email later)
             if ($overwrite === true) {
                 $fieldsToWrite = $record;
-            } else if (is_array($overwrite)) {
+            } elseif (is_array($overwrite)) {
                 $fieldsToWrite = array_intersect_key($record, ArrayLib::valuekey($overwrite));
             }
+
             // If false then fieldsToWrite remains empty, let's coast it out.
 
             // Subtract email if setting is not precisely true:
@@ -204,9 +210,6 @@ class OpauthIdentity extends DataObject
         return $this;
     }
 
-    /**
-     * @return array
-     */
     public function getAuthSource(): array
     {
         return $this->authSource;
@@ -221,6 +224,7 @@ class OpauthIdentity extends DataObject
         if (!isset($mapper[$this->Provider])) {
             return array();
         }
+
         return $mapper[$this->Provider];
     }
 
@@ -242,12 +246,14 @@ class OpauthIdentity extends DataObject
             foreach ($this->getMemberMapper() as $memberField => $sourcePath) {
                 if (is_array($sourcePath)) {
                     $record[$memberField] = call_user_func($sourcePath, $this->authSource);
-                } else if (is_string($sourcePath)) {
+                } elseif (is_string($sourcePath)) {
                     $record[$memberField] = OpauthResponseHelper::parse_source_path($sourcePath, $this->authSource);
                 }
             }
+
             $this->parsedRecord = $record;
         }
+
         return $this->parsedRecord;
     }
 

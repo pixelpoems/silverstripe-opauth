@@ -1,18 +1,21 @@
 <?php
+
+declare(strict_types=1);
+
 namespace Silverstripe\Opauth\Extensions;
 
 
+use SilverStripe\Core\Extension;
 use Silverstripe\Opauth\Models\OpauthIdentity;
-use SilverStripe\ORM\DataExtension;
 
-class OpauthMemberExtension extends DataExtension
+class OpauthMemberExtension extends Extension
 {
-    private static $has_many = array(
+    private static array $has_many = array(
         "OpauthIdentities" => OpauthIdentity::class
     );
 
-    public function onBeforeDelete()
+    public function onBeforeDelete(): void
     {
-        $this->owner->OpauthIdentities()->removeAll();
+        $this->getOwner()->OpauthIdentities()->removeAll();
     }
 }

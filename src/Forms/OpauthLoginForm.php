@@ -1,4 +1,7 @@
 <?php
+
+declare(strict_types=1);
+
 namespace Silverstripe\Opauth\Forms;
 
 use InvalidArgumentException;
@@ -7,7 +10,6 @@ use OpauthStrategy;
 use SilverStripe\Control\Controller;
 use SilverStripe\Control\HTTPRequest;
 use SilverStripe\Control\HTTPResponse;
-use SilverStripe\Control\Session;
 use SilverStripe\Forms\FieldList;
 use SilverStripe\Forms\FormAction;
 use SilverStripe\Forms\HiddenField;
@@ -34,7 +36,7 @@ class OpauthLoginForm extends LoginForm {
 			'httpSubmission',
     ];
 
-	public function __construct($controller, $name) {
+	public function __construct(?\SilverStripe\Control\RequestHandler $controller, $name) {
 		parent::__construct($controller, $name, $this->getFields(), $this->getActions());
 		$this->configureBackURL();
 	}
@@ -43,7 +45,7 @@ class OpauthLoginForm extends LoginForm {
 	 * Handle any backURL. Uses sessions as state gets lost through OAuth flow.
 	 * Use the same session key as MemberLoginForm for x-compat
 	 */
-	public function configureBackURL() {
+	public function configureBackURL(): void {
 		if($backURL = $this->controller->request->requestVar('BackURL')) {
             Controller::curr()->getRequest()->getSession()->set('BackURL', $backURL);
 		}
@@ -67,35 +69,33 @@ class OpauthLoginForm extends LoginForm {
 				$strategyMethod = 'handleStrategy' . $strategyClass;
 				$this->addWrapperMethod($strategyMethod, 'handleStrategy');
 			}
+
 			$this->_strategiesDefined = true;
 		}
 	}
 
 	/**
-	 * Ensure AuthenticationMethod is set to tell Security which form to process
-	 * Very important for multi authenticator form setups.
-	 * @return FieldList
-	 */
-	protected function getFields(): FieldList
+     * Ensure AuthenticationMethod is set to tell Security which form to process
+     * Very important for multi authenticator form setups.
+     */
+    protected function getFields(): FieldList
     {
-		return new FieldList(
-			new HiddenField('AuthenticationMethod', null, $this->authenticator_class)
-		);
+		return FieldList::create(HiddenField::create('AuthenticationMethod', null, $this->authenticator_class));
 	}
 
 	/**
-	 * Provide an action button to be clicked per strategy
-	 * @return FieldList
-	 */
-	protected function getActions(): FieldList
+     * Provide an action button to be clicked per strategy
+     */
+    protected function getActions(): FieldList
     {
-		$actions = new FieldList();
+		$actions = FieldList::create();
 		foreach($this->getStrategies() as $strategyClass) {
 			$strategyMethod = 'handleStrategy' . $strategyClass;
-			$fa = new FormAction($strategyMethod, $strategyClass);
+			$fa = FormAction::create($strategyMethod, $strategyClass);
 			$fa->setUseButtonTag(true);
 			$actions->push($fa);
 		}
+
 		return $actions;
 	}
 
@@ -108,19 +108,19 @@ class OpauthLoginForm extends LoginForm {
 	}
 
 	/**
-	 * Global endpoint for handleStrategy - all strategy actions point here.
-	 * @param string $funcName The bound function name from addWrapperMethod
-	 * @param array $data Standard data param as part of form submission
-	 * @param OpauthLoginForm $form
-	 * @param HTTPRequest $request
-	 * @return HTTPResponse
-	 * @throws InvalidArgumentException The strategy must be valid and existent
-	 * @throws LogicException This should not be directly called.
+     * Global endpoint for handleStrategy - all strategy actions point here.
+     * @param string $funcName The bound function name from addWrapperMethod
+     * @param array $data Standard data param as part of form submission
+     * @param OpauthLoginForm $form
+     * @param HTTPRequest $request
+     * @throws InvalidArgumentException The strategy must be valid and existent
+     * @throws LogicException This should not be directly called.
      */
-	public function handleStrategy($funcName, $data, $form, $request) {
+    public function handleStrategy($funcName, $data, $form, $request): HTTPResponse {
 		if(func_num_args() < 4) {
 			throw new LogicException('Must be called with a strategy handler');
 		}
+
 		// Trim handleStrategy from the function name:
 		$strategy = substr($funcName, strlen('handleStrategy')) . 'Strategy';
 
@@ -138,10 +138,9 @@ class OpauthLoginForm extends LoginForm {
 	}
 
 	/**
-	 * The authenticator name, used in templates
-	 * @return string
-	 */
-	public function getAuthenticatorName(): string
+     * The authenticator name, used in templates
+     */
+    public function getAuthenticatorName(): string
     {
 		return OpauthAuthenticator::get_name();
 	}
