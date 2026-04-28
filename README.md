@@ -36,9 +36,9 @@ A `Member` can have multiple OAuth identities linked to a single account, saved 
 Install the branch matching your SilverStripe version:
 
 ```bash
-composer require pixelpoems/silverstripe-opauth:dev-4.x   # for SilverStripe 4
-composer require pixelpoems/silverstripe-opauth:dev-5.x   # for SilverStripe 5
-composer require pixelpoems/silverstripe-opauth:dev-6.x   # for SilverStripe 6
+composer require pixelpoems/silverstripe-opauth:4.x-dev   # for SilverStripe 4
+composer require pixelpoems/silverstripe-opauth:5.x-dev   # for SilverStripe 5
+composer require pixelpoems/silverstripe-opauth:6.x-dev   # for SilverStripe 6
 ```
 
 ## Quick Start
