@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Silverstripe\Opauth\Services;
 
 
-use Opauth;
+use Silverstripe\Opauth\PHP8Opauth;
 use SilverStripe\Control\Controller;
 use SilverStripe\Core\Config\Configurable;
 use SilverStripe\Core\Injector\Injector;
@@ -23,11 +23,7 @@ class OpauthAuthenticator extends MemberAuthenticator
 {
     use Configurable;
 
-    private static
-        /**
-         * @var Opauth Persistent Opauth instance.
-         */
-        ?Opauth $opauth = null;
+    private static ?PHP8Opauth $opauth = null;
 
     /**
      * get_enabled_strategies
@@ -62,10 +58,10 @@ class OpauthAuthenticator extends MemberAuthenticator
      * @param boolean $autoRun Should Opauth auto run? Default: false
      * @return Opauth The Opauth instance. Isn't it easy to typo this as Opeth?
      */
-    public static function opauth(bool $autoRun = false, array $config = array()): Opauth
+    public static function opauth(bool $autoRun = false, array $config = array()): PHP8Opauth
     {
         if (!isset(self::$opauth)) {
-            self::$opauth = new Opauth(self::get_opauth_config($config), $autoRun);
+            self::$opauth = new PHP8Opauth(self::get_opauth_config($config), $autoRun);
         }
 
         return self::$opauth;
